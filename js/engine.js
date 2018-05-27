@@ -44,8 +44,11 @@ var Engine = (function(global) {
         /* Call our update/render functions, pass along the time delta to
          * our update function since it may be used for smooth animation.
          */
-        update(dt);
-        render();
+        if(!pause){
+            update(dt);
+            render();
+            checkWinningCondidtion();
+        }
 
         /* Set our lastTime variable which is used to determine the time delta
          * for the next time this function is called.
@@ -79,7 +82,7 @@ var Engine = (function(global) {
      */
     function update(dt) {
         updateEntities(dt);
-        // checkCollisions();
+        checkCollisions();
     }
 
     /* This is called by the update function and loops through all of the
@@ -94,6 +97,45 @@ var Engine = (function(global) {
             enemy.update(dt);
         });
         player.update();
+    }
+
+    function checkCollisions(){
+        var playerXleft = player.x + 20;
+        var playerXright = player.x + 101 - 20;
+        var collision = false;
+        allEnemies.forEach(function(enemy){
+            if(enemy.row == player.row && 
+                enemy.x + 101 >= playerXleft &&
+                enemy.x <= playerXright){
+                    collision = true;
+            }
+        });
+        if(collision){
+            global.pause = true;
+            setTimeout(function(){
+                global.pause = false;                
+                reset();
+            }, 1000);
+        }
+    }
+
+    function checkWinningCondidtion(){
+        if(player.row == 0){
+            global.pause = true;
+            ctx.fillStyle = "#000";
+            ctx.fillRect(101, 83*2, 101*3, 83*2);
+            ctx.fillStyle = "#FFF";
+            ctx.fillRect(101+2, 83*2+2, 101*3-4, 83*2-4);
+            ctx.font = "30px Arial";
+            ctx.fillStyle = "#000";
+            ctx.textAlign = "center";
+            ctx.fillText("Congratulations!",ctx.canvas.width/2, 230);
+            ctx.fillText("You won",ctx.canvas.width/2, 280);
+            setTimeout(function(){
+                global.pause = false;                
+                reset();
+            }, 1500);
+        }
     }
 
     /* This function initially draws the "game level", it will then call
@@ -161,7 +203,14 @@ var Engine = (function(global) {
      * those sorts of things. It's only called once by the init() method.
      */
     function reset() {
-        // noop
+        player.col = 2;
+        player.row = 5;
+        allEnemies = [];
+        allEnemies.push(new Enemy());
+        allEnemies.push(new Enemy());
+        allEnemies.push(new Enemy());
+        allEnemies.push(new Enemy());
+        allEnemies.push(new Enemy());
     }
 
     /* Go ahead and load all of the images we know we're going to need to
@@ -181,5 +230,6 @@ var Engine = (function(global) {
      * object when run in a browser) so that developers can use it more easily
      * from within their app.js files.
      */
+    global.pause = false;
     global.ctx = ctx;
 })(this);
